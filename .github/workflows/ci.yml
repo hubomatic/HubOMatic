@@ -1,0 +1,21 @@
+name: HubOMatic CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches:
+      - '*'
+  schedule:
+    # run at 6AM & 6PM UTC
+    - cron:  '0 6,18 * * *'
+
+jobs:
+
+  macOS:
+    name: HubOMatic macOS Tests
+    runs-on: macos-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Run tests
+      run: swift test --enable-test-discovery
