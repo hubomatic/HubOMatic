@@ -1,5 +1,9 @@
 # Hub-O-Matic
 
+[![Build Status](https://github.com/hubomatic/HubOMatic/workflows/HubOMatic%20CI/badge.svg?branch=main)](https://github.com/hubomatic/HubOMatic/actions)
+[![Swift Package Manager compatible](https://img.shields.io/badge/SPM-compatible-brightgreen.svg)](https://github.com/apple/swift-package-manager)
+
+
 Hub-O-Matic (`HubOMatic`) is a framework for auto-updating macOS 11 apps from GitHub releases.
 
 ## About
