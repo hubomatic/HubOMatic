@@ -9,6 +9,10 @@ public struct HubOMatic {
     }
 
     var text = "Hello, World!"
+
+    public init() {
+
+    }
 }
 
 public extension HubOMatic {
