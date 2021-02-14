@@ -6,7 +6,6 @@ let package = Package(
     products: [
         .library(
             name: "HubOMatic",
-            type: .dynamic,
             targets: ["HubOMatic"]),
     ],
     dependencies: [
