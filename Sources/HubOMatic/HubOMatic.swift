@@ -156,10 +156,6 @@ public extension HubOMatic {
         }
         return true
     }
-
-    func toolbarButton() -> some View {
-        Button(LocalizedStringKey("Check for Update"), action: checkForUpdateAction)
-    }
 }
 
 
