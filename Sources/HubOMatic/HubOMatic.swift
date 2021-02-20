@@ -22,11 +22,15 @@ public final class HubOMatic : ObservableObject {
         public var versionInfoLocal: URL?
         public var relativeArtifact: String
 
-        /// Creates a HubOMatic config for the given GitHub organization and repository following default naming conventions.
+        /// Creates a HubOMatic config for the given GitHub organization and repository following default naming conventions. If no arguments are specified, the `Bundle.main.bundleIdentifier` is checked and the last two sections are used for the organization and repository names respectively. For example, the bundle named "com.mycompany.mydepartment.awesomeapps.AwesomeApp" will use "awesomeapps" as the org and "AwesomeApp" as the repository. The behavior for an invalid bundle identifier (a string that is not a dot-separated reverse-domain) is undefined.
         ///
         /// "https://github.com/hubomatic/MicroVector/releases/latest/download/appcast.xml"
-        public static func github(org: String, repo: String, update: String = "appcast.xml", archive: String? = nil, latest: String = "latest") -> Self {
+        public static func github(org orgName: String? = nil, repo repoName: String? = nil, update: String = "appcast.xml", archive: String? = nil, latest: String = "latest") -> Self {
             let github = URL(string: "https://github.com")!
+
+            let mainBundle = Bundle.main.bundleIdentifier
+            let repo = repoName ?? mainBundle?.split(separator: ".").last?.description ?? "RepoName"
+            let org = orgName ?? mainBundle?.split(separator: ".").dropLast().last?.description ?? "orgname"
             let orgURL = github.appendingPathComponent(org)
             let repoURL = orgURL.appendingPathComponent(repo)
             let releasesURL = repoURL.appendingPathComponent("releases")
@@ -97,3 +101,5 @@ public extension Scene {
         }
     }
 }
+
+
