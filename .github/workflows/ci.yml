@@ -17,5 +17,8 @@ jobs:
     runs-on: macos-latest
     steps:
     - uses: actions/checkout@v2
-    - name: Run tests
-      run: swift test --enable-test-discovery
+    - name: Build
+      run: swift build
+    # disbaled until GitHub supports macOS-11.0
+    #- name: Run tests
+    #run: swift test --enable-test-discovery
