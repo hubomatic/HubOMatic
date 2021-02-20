@@ -75,10 +75,31 @@ public extension HubOMatic {
             .appendingPathComponent(config.relativeArtifact)
     }
 
-    @discardableResult static func create(_ config: Config) -> Self {
-        let hom = Self(config: config)
-        hom.setup()
-        return hom
+    /// Initialized, but does not start, a `HubOMatic` with the given config. To start the update check scheduing, call `start`.
+    ///
+    /// Example usage:
+    /// ```
+    /// struct AutoUpdatingApp: App {
+    ///     @StateObject var hub = HubOMatic.create(.github()).start()
+    ///
+    ///     @SceneBuilder var body: some Scene {
+    ///         DocumentGroup(newDocument: MyDocument()) { file in
+    ///             ContentView(document: file.$document)
+    ///                 .toolbar { hub.toolbarButton() }
+    ///         }
+    ///         .withHubOMatic(hub)
+    ///     }
+    /// }
+    /// ```
+    static func create(_ config: Config) -> Self {
+        Self(config: config)
+    }
+
+    /// Start the app, scheduling an update check for users who have opted-in to checking.
+    func start() -> Self {
+        self.setup()
+        self.checkForUpdate(background: true)
+        return self
     }
 
     /// Action for checking for an update. Meant to be used like:
