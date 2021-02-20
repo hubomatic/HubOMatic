@@ -3,6 +3,9 @@ import PackageDescription
 
 let package = Package(
     name: "HubOMatic",
+    platforms: [
+        .macOS(.v11),
+    ],
     products: [
         .library(
             name: "HubOMatic",
@@ -10,11 +13,12 @@ let package = Package(
     ],
     dependencies: [
         .package(name: "MiscKit", url: "https://github.com/glimpseio/MiscKit", .branch("main")),
+        .package(name: "Sparkle", url: "https://github.com/sparkle-project/Sparkle", .branch("1.25.0-rc2")),
     ],
     targets: [
         .target(
             name: "HubOMatic",
-            dependencies: ["MiscKit"]),
+            dependencies: ["Sparkle", "MiscKit"]),
         .testTarget(
             name: "HubOMaticTests",
             dependencies: ["HubOMatic"]),

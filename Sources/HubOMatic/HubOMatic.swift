@@ -1,191 +1,99 @@
+//
+//  HubOMatic.swift
+//  MicroVector
+//
+//  Created by Marc Prud'hommeaux on 2/12/21.
+//
 
 import Foundation
-import MiscKit
+import Combine
+import SwiftUI
+import Sparkle
 
+/// The central manager for checking for app updates and providing UI components for configuring and controlling the update process.
+public final class HubOMatic : ObservableObject {
+    private var subscribers = Set<AnyCancellable>()
+    let updater = SUUpdater.shared()
+    public let config: Config
 
-public struct HubOMatic {
-    struct Config : Hashable, Codable {
-        var repository: URL
+    public struct Config : Hashable, Codable {
+        public var releasesURL: URL
+        public var versionInfo: URL
+        public var versionInfoLocal: URL?
+        public var relativeArtifact: String
+
+        /// Creates a HubOMatic config for the given GitHub organization and repository following default naming conventions.
+        ///
+        /// "https://github.com/hubomatic/MicroVector/releases/latest/download/appcast.xml"
+        public static func github(org: String, repo: String, update: String = "appcast.xml", archive: String? = nil, latest: String = "latest") -> Self {
+            let github = URL(string: "https://github.com")!
+            let orgURL = github.appendingPathComponent(org)
+            let repoURL = orgURL.appendingPathComponent(repo)
+            let releasesURL = repoURL.appendingPathComponent("releases")
+            let latestURL = releasesURL.appendingPathComponent(latest)
+            let downloadDir = latestURL.appendingPathComponent("download")
+            let updatePath = downloadDir.appendingPathComponent(update)
+
+            let config = Config(releasesURL: releasesURL, versionInfo: updatePath, versionInfoLocal: Bundle.main.url(forResource: update, withExtension: nil), relativeArtifact: archive ?? repo + ".zip")
+
+            return config
+        }
     }
 
-    var text = "Hello, World!"
+    deinit {
+        subscribers.removeAll()
+    }
 
-    public init() {
+    private init(config: Config) {
+        self.config = config
+    }
 
+    func setup() {
+        UserDefaults.standard.set(config.versionInfo.absoluteString, forKey: "SUFeedURL")
     }
 }
 
 public extension HubOMatic {
-    func start() { 
+    /// The URL for downloading the artifact
+    var artifactURL: URL {
+        config.versionInfo
+            .deletingLastPathComponent()
+            .appendingPathComponent(config.relativeArtifact)
+    }
+
+    @discardableResult static func create(_ config: Config) -> Self {
+        let hom = Self(config: config)
+        hom.setup()
+        return hom
+    }
+
+    /// Initiates an update check
+    func checkForUpdateAction() {
+        updater?.checkForUpdates(nil)
+    }
+
+    func toolbarButton() -> some View {
+        Button(LocalizedStringKey("Check for Update"), action: checkForUpdateAction)
     }
 }
 
 
+public struct HubOMaticUpdateCommands : Commands {
+    let hub: HubOMatic
 
-//import Foundation
-//import OSLog
-//
-///// Local handle for logging events.
-//private let events: OSLog = .init(subsystem: "net.hubomatic.Events", category: "XPC")
-//
-//
-///// XPC interface for returning folder contents.
-//@objc protocol FinderInterface {
-//
-//    /// Loads files from the given folder
-//    /// - Parameter path: Path in Finder.
-//    /// - Parameter reply: Callback with a list of files.
-//    func filesInFolder(_ path: String, reply: @escaping ([String], Error?) -> Void)
-//
-//    func shellCommand(_ command: String, reply: @escaping (String?, Error?) -> Void)
-//
-//}
-//
-//
-//// TODO:
-//// /usr/bin/curl https://github.com/parquette/parquette/releases/latest/download/Parquette.zip > Parquette.zip
-//// /usr/bin/ditto -x -k Parquette.zip .
-//// /usr/bin/xattr -d -r 'com.apple.quarantine' Parquette.app
-//// /bin/mv Parquette.app /Applications/
-//// Process.runTask(command: "/bin/sh", arguments: ["-c", "(while /bin/kill -0 \(pid) >&/dev/null; do /bin/sleep 0.2; done; /usr/bin/xattr -d -r 'com.apple.quarantine' '\(appPath)'; /usr/bin/open '\(appPath)') &"])
-//
-//extension Process {
-//    public static func shell(script: String, privileged: Bool = false) throws -> String? {
-//        let task = Process()
-//        let pipe = Pipe()
-//
-//        task.launchPath = "/bin/sh"
-//        task.arguments = ["-c", script]
-//        task.standardOutput = pipe
-//        try task.run()
-//
-//        let handle = pipe.fileHandleForReading
-//        let data = handle.readDataToEndOfFile()
-//        let output = String(data: data, encoding: String.Encoding.utf8)
-//        return output
-//    }
-//}
-//
-///// Live connection to the given XPC service.
-//final public class XPC<P> {
-//
-//    /// Bundle identifier of a XPC service.
-//    public let serviceName: String
-//
-//    /// Callback for unexpected XPC errors.
-//    public let errorHandler: (_ error: Error) -> Void
-//
-//    /// Current XPC state.
-//    @Atomic
-//    private var cachedState: (connection: NSXPCConnection, proxy: P)? {
-//        willSet {
-//            cachedState?.connection.invalidate()
-//        }
-//    }
-//
-//    /// Creates a live XPC connection.
-//    /// - Parameter serviceName: Bundle identifier of a XPC service.
-//    /// - Parameter errorHandler: Callback for unexpected XPC errors.
-//    /// - Parameter error: XPC error.
-//    public init(serviceName: String, errorHandler: @escaping (_ error: Error) -> Void) {
-//        self.serviceName = serviceName
-//        self.errorHandler = errorHandler
-//    }
-//
-//    /// Cleanup XPC connection.
-//    deinit {
-//        self.cachedState = nil
-//    }
-//}
-//
-//// MARK: - Internal API
-//
-//public extension XPC {
-//
-//    /// Performs a XPC operation.
-//    /// - Parameter handler: Callback with a proxy object.
-//    /// - Parameter proxy: Remote object interface.
-//    func callProxy(_ handler: (_ proxy: P) -> Void) {
-//        do {
-//            handler(try proxy())
-//        } catch {
-//            cachedState = nil
-//            errorHandler(error)
-//        }
-//    }
-//}
-//
-//// MARK: - Private API
-//
-//private extension XPC {
-//
-//    /// Used to create a XPC if needed and returns a proxy or an error.
-//    func proxy() throws -> P {
-//        if let state = cachedState {
-//            return state.proxy
-//        }
-//
-//        // Service protocol cannot be created from `String(describing: P.self)` so we use a method `dump` and strip special characters
-//        var dumpOutput = ""
-//        _ = dump(P.self, to: &dumpOutput)
-//        let components = dumpOutput.components(separatedBy: " ")
-//        guard let protocolName = components.first(where: { $0.contains(".") }), let serviceProtocol = NSProtocolFromString(protocolName) else {
-//            os_log(.error, log: events, "Invalid Proxy Type")
-//            throw CocoaError(.xpcConnectionInvalid)
-//        }
-//
-//        let connection = NSXPCConnection(serviceName: serviceName)
-//        connection.remoteObjectInterface = .init(with: serviceProtocol)
-//        connection.resume()
-//        connection.interruptionHandler = { [weak self] in
-//            os_log(.error, log: events, "Exit or Crash")
-//            self?.errorHandler(CocoaError(.xpcConnectionInterrupted))
-//        }
-//        let anyProxy = connection.remoteObjectProxyWithErrorHandler { [weak self] error in
-//            os_log(.error, log: events, "No Reply: %{public}s", String(describing: error))
-//            self?.errorHandler(error)
-//        }
-//        guard let proxy = anyProxy as? P else {
-//            os_log(.error, log: events, "Invalid Proxy Type")
-//            throw CocoaError(.xpcConnectionInvalid)
-//        }
-//        cachedState = (connection, proxy)
-//        return proxy
-//    }
-//}
-//
-//
-///// Lightweight atomic accessor.
-//@propertyWrapper
-//public class Atomic<Value> {
-//
-//  /// Underlying value.
-//  private var value: Value
-//
-//  /// Lightweight lock.
-//  private var lock: os_unfair_lock_s = .init()
-//
-//  /// Property wrapper requirement.
-//  public var wrappedValue: Value {
-//    get { access { $0 } }
-//    set { access { $0 = newValue } }
-//  }
-//
-//  /// Creates a new accessor with the given initial value.
-//  /// - Parameter value: Initial value.
-//  public init(wrappedValue value: Value) {
-//    self.value = value
-//  }
-//}
-//
-//// MARK: - Private API
-//
-//private extension Atomic {
-//
-//  /// Provides mutable access to the underlying value.
-//  func access<T>(_ accessor: (inout Value) -> T) -> T {
-//    os_unfair_lock_lock(&lock)
-//    defer { os_unfair_lock_unlock(&lock) }
-//    return accessor(&value)
-//  }
-//}
+    public var body: some Commands {
+        Group {
+            CommandGroup(after: CommandGroupPlacement.appSettings) {
+                Button(LocalizedStringKey("Check for Updates"), action: hub.checkForUpdateAction)
+            }
+        }
+    }
+}
+
+public extension Scene {
+    func withHubOMatic(_ hub: HubOMatic) -> some Scene {
+        Group {
+            self.commands { HubOMaticUpdateCommands(hub: hub) }
+        }
+    }
+}
