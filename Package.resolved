@@ -2,15 +2,6 @@
   "object": {
     "pins": [
       {
-        "package": "MiscKit",
-        "repositoryURL": "https://github.com/glimpseio/MiscKit",
-        "state": {
-          "branch": "main",
-          "revision": "46b1b8157c58affe2820b695940c553743be3991",
-          "version": null
-        }
-      },
-      {
         "package": "Sparkle",
         "repositoryURL": "https://github.com/sparkle-project/Sparkle",
         "state": {

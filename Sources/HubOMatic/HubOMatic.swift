@@ -9,9 +9,12 @@ import Foundation
 import Combine
 import SwiftUI
 import Sparkle
+import OSLog
 
 /// The central manager for checking for app updates and providing UI components for configuring and controlling the update process.
 public final class HubOMatic : ObservableObject {
+    public let log = Logger(subsystem: "HubOMatic", category: "HubOMatic")
+
     public let config: Config
     private var subscribers = Set<AnyCancellable>()
     private let updater = SUUpdater.shared()!
@@ -61,10 +64,14 @@ public final class HubOMatic : ObservableObject {
     private init(config: Config) {
         self.config = config
     }
+}
 
-    func setup() {
-        UserDefaults.standard.set(config.versionInfo.absoluteString, forKey: "SUFeedURL")
-    }
+public extension Bundle {
+    /// Returns the `kCFBundleVersionKey` from the dictionary, which corresponds to the build number
+    var buildVersionString: String? { object(forInfoDictionaryKey: kCFBundleVersionKey as String) as? String }
+
+    /// Returns the `CFBundleShortVersionString` from the dictionary
+    var shortVersionString: String? { object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String }
 }
 
 public extension HubOMatic {
@@ -73,6 +80,16 @@ public extension HubOMatic {
         config.versionInfo
             .deletingLastPathComponent()
             .appendingPathComponent(config.relativeArtifact)
+    }
+
+    /// Initialized any necessary properties for performing update checking
+    func setup() {
+        UserDefaults.standard.set(config.versionInfo.absoluteString, forKey: "SUFeedURL")
+    }
+
+    /// Returns whether update checking is possible with the current bundle
+    var canPerformUpdateCheck: Bool {
+        Bundle.main.buildVersionString != nil
     }
 
     /// Initialized, but does not start, a `HubOMatic` with the given config. To start the update check scheduing, call `start`.
@@ -121,17 +138,23 @@ public extension HubOMatic {
     /// }
     /// ```
     func checkForUpdateButton(title: LocalizedStringKey = LocalizedStringKey("Check for Updates")) -> some View {
-        Button(title, action: checkForUpdateAction)
+        Button(title, action: checkForUpdateAction).disabled(!canPerformUpdateCheck)
     }
 
 
     /// Initiates an update check either in the foreground or background
-    func checkForUpdate(background: Bool) {
+    @discardableResult func checkForUpdate(background: Bool) -> Bool {
+        if !canPerformUpdateCheck {
+            log.info("cannot check for updates due to HubOMatic.canPerformUpdateCheck failure")
+            return false
+        }
+
         if background {
             updater.checkForUpdatesInBackground()
         } else {
             updater.checkForUpdates(nil)
         }
+        return true
     }
 
     func toolbarButton() -> some View {
