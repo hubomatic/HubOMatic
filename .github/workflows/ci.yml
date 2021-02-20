@@ -2,7 +2,9 @@ name: HubOMatic CI
 
 on:
   push:
-    branches: [ main ]
+    branches: '*'
+    tags: '*'
+
   pull_request:
     branches:
       - '*'
