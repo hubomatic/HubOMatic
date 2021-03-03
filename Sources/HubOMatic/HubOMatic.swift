@@ -113,7 +113,7 @@ public extension HubOMatic {
     }
 
     /// Start the app, scheduling an update check for users who have opted-in to checking.
-    func start() -> Self {
+    @discardableResult func start() -> Self {
         self.setup()
         self.checkForUpdate(background: true)
         return self

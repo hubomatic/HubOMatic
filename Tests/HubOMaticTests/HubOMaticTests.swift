@@ -9,6 +9,6 @@ final class HubOMaticTests: XCTestCase {
     }
 
     func testSparkle() {
-        XCTAssertEqual("Sparkle/1.25.0-rc2", SUUpdater.shared()?.userAgentString.split(separator: " ").last) // full agent is someting like: "xctest/17501 Sparkle/1.25.0-rc2"
+        XCTAssertEqual("Sparkle/1.26.0", SUUpdater.shared()?.userAgentString.split(separator: " ").last) // full agent is someting like: "xctest/17501 Sparkle/1.26.0"
     }
 }

@@ -12,7 +12,7 @@ let package = Package(
             targets: ["HubOMatic"]),
     ],
     dependencies: [
-        .package(name: "Sparkle", url: "https://github.com/sparkle-project/Sparkle", from: "1.25.0-rc2"),
+        .package(name: "Sparkle", url: "https://github.com/sparkle-project/Sparkle", from: "1.26.0"),
     ],
     targets: [
         .target(
