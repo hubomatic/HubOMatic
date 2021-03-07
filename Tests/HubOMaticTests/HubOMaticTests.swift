@@ -4,8 +4,8 @@ import Sparkle
 
 final class HubOMaticTests: XCTestCase {
     func testHubOMaticConfig() {
-        XCTAssertEqual("https://github.com/hubomatic/HubOMatic/releases/latest/download/appcast.xml", HubOMatic.create(.github(org: "hubomatic", repo: "HubOMatic")).config.versionInfo.absoluteString)
-        XCTAssertEqual("https://github.com/hubomatic/HubOMatic/releases/latest/download/HubOMatic.zip", HubOMatic.create(.github(org: "hubomatic", repo: "HubOMatic")).artifactURL.absoluteString)
+        XCTAssertEqual("https://github.com/hubomatic/HubOMatic/releases/latest/download/appcast.xml", HubOMatic.create(.github(org: "hubomatic", repo: "HubOMatic", token: "")).config.versionInfo.absoluteString)
+        XCTAssertEqual("https://github.com/hubomatic/HubOMatic/releases/latest/download/HubOMatic.zip", HubOMatic.create(.github(org: "hubomatic", repo: "HubOMatic", token: "")).artifactURL.absoluteString)
     }
 
     func testSparkle() {

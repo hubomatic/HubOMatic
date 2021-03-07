@@ -19,12 +19,15 @@ public final class HubOMatic : ObservableObject {
     private var subscribers = Set<AnyCancellable>()
     private let updater = SUUpdater.shared()!
 
+    @State private var feedbackSheetPresented: Bool = false
+
     /// The configuration for a HubOMatic App. Provides default conventions for deployment platforms such as GitHub.
     public struct Config : Hashable, Codable {
         public var releasesURL: URL
         public var versionInfo: URL
         public var versionInfoLocal: URL?
         public var relativeArtifact: String
+        public var token: String
 
         /// Creates a Hub-O-Matic™ config following a convention for a GitHub (or GitHub-compatible) organization and repository with the default naming convention.
         /// If no arguments are specified, the `Bundle.main.bundleIdentifier` is checked and the last two sections are used for the organization and repository names respectively. For example, the bundle named "com.mycompany.mydepartment.awesomeapps.AwesomeApp" will use "awesomeapps" as the org and "AwesomeApp" as the repository. The behavior for an invalid bundle identifier (a string that is not a dot-separated reverse-domain) is undefined.
@@ -39,7 +42,7 @@ public final class HubOMatic : ObservableObject {
         ///   - host: the root URL for the host, defaulting to "https://github.com"
         ///
         /// - Returns: a `HubOMatic.Config` to be used to initialize a HubOMatic
-        public static func github(org orgName: String? = nil, repo repoName: String? = nil, update: String = "appcast.xml", archive: String? = nil, latest: String = "latest", host hostURL: URL = URL(string: "https://github.com")!) -> Self {
+        public static func github(org orgName: String? = nil, repo repoName: String? = nil, update: String = "appcast.xml", archive: String? = nil, latest: String = "latest", host hostURL: URL = URL(string: "https://github.com")!, token: String) -> Self {
 
             let mainBundle = Bundle.main.bundleIdentifier
             let repo = repoName ?? mainBundle?.split(separator: ".").last?.description ?? "RepoName"
@@ -51,7 +54,7 @@ public final class HubOMatic : ObservableObject {
             let downloadDir = latestURL.appendingPathComponent("download")
             let updatePath = downloadDir.appendingPathComponent(update)
 
-            let config = Config(releasesURL: releasesURL, versionInfo: updatePath, versionInfoLocal: Bundle.main.url(forResource: update, withExtension: nil), relativeArtifact: archive ?? repo + ".zip")
+            let config = Config(releasesURL: releasesURL, versionInfo: updatePath, versionInfoLocal: Bundle.main.url(forResource: update, withExtension: nil), relativeArtifact: archive ?? repo + ".zip", token: token)
 
             return config
         }
@@ -141,6 +144,22 @@ public extension HubOMatic {
         Button(title, action: checkForUpdateAction).disabled(!canPerformUpdateCheck)
     }
 
+    /// Button for feedback screen. Meant to be used like:
+    /// ```
+    /// @StateObject var hub = HubOMatic.create(.github())
+    /// var body: some View {
+    ///     hub.feedbackButton()
+    /// }
+    /// ```
+    func feedbackButton(isPresented: Binding<Bool>, title: LocalizedStringKey = LocalizedStringKey("Feedback")) -> some View {
+        Button(title, action: {
+            isPresented.wrappedValue.toggle()
+        })
+        .sheet(isPresented: isPresented, content: {
+            let viewModel = FeedbackViewModel(token: self.config.token)
+            FeedbackSheet(viewModel: viewModel)
+        })
+    }
 
     /// Initiates an update check either in the foreground or background
     @discardableResult func checkForUpdate(background: Bool) -> Bool {
@@ -157,7 +176,6 @@ public extension HubOMatic {
         return true
     }
 }
-
 
 /// Commands for Hub-O-Matic
 public struct HubOMaticUpdateCommands : Commands {
